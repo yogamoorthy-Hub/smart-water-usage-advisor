@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Water Usage Advisor - UN SDG 6</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #006064 0%, #00838f 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 96, 100, 0.3);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .sdg-badge {
+            display: inline-block;
+            background: #26c6da;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 131, 143, 0.15);
+        }
+
+        .section-title {
+            color: #006064;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: "💧";
+            font-size: 1.2em;
+        }
+
+        /* RAG Simulation Section */
+        .rag-section {
+            border: 2px dashed #26c6da;
+            background: #e0f7fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: white;
+            border: 2px solid #26c6da;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            color: #006064;
+            font-weight: 500;
+        }
+
+        .file-input-label:hover {
+            background: #26c6da;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            color: #00838f;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .process-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00838f 0%, #006064 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 131, 143, 0.3);
+        }
+
+        .process-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 131, 143, 0.4);
+        }
+
+        .process-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .processing-status {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .processing-status.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0f7fa;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #26c6da, #00838f);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 15px 20px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.ai {
+            background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 8px rgba(38, 198, 218, 0.3);
+        }
+
+        .message.user {
+            background: white;
+            color: #006064;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0f7fa;
+        }
+
+        .message-label {
+            font-size: 0.75em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #26c6da;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #00838f;
+            box-shadow: 0 0 0 3px rgba(38, 198, 218, 0.2);
+        }
+
+        .ask-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(38, 198, 218, 0.3);
+        }
+
+        .ask-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(38, 198, 218, 0.4);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
+            color: white;
+            border-radius: 15px;
+            border-bottom-left-radius: 5px;
+            max-width: 80px;
+            align-self: flex-start;
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #e0f7fa;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #26c6da;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #00838f;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.6em;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .chat-container {
+                height: 400px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        /* Water Impact Calculator */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            color: #006064;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .input-group input {
+            padding: 12px;
+            border: 2px solid #26c6da;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #00838f;
+            box-shadow: 0 0 0 3px rgba(38, 198, 218, 0.2);
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #26c6da 0%, #00acc1 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(38, 198, 218, 0.3);
+            margin-top: 10px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(38, 198, 218, 0.4);
+        }
+
+        .impact-result {
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border-radius: 10px;
+            border: 2px solid #26c6da;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .impact-result.active {
+            display: block;
+        }
+
+        .success-message {
+            font-size: 1.3em;
+            color: #2e7d32;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+            border-radius: 10px;
+            border: 2px solid #4caf50;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .success-message .liters {
+            color: #1b5e20;
+            font-size: 1.4em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        footer {
+            text-align: center;
+            color: #006064;
+            margin-top: 30px;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+
+        .disclaimer {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .disclaimer strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💧 Smart Water Usage Advisor</h1>
+            <p>Promoting Clean Water and Sanitation</p>
+            <div class="sdg-badge">UN SDG 6: Clean Water & Sanitation</div>
+        </header>
+
+        <div class="section">
+            <h2 class="section-title">Document RAG Simulation</h2>
+            
+            <div class="disclaimer">
+                <strong>⚠️ Transparency Notice:</strong>
+                This is a simulated document processing interface for educational purposes. In a production environment, this would connect to a real RAG (Retrieval-Augmented Generation) system.
+            </div>
+
+            <div class="rag-section">
+                <div class="file-input-wrapper">
+                    <label for="pdfUpload" class="file-input-label">
+                        📄 Click to Upload Government Water Guidelines PDF
+                    </label>
+                    <input type="file" id="pdfUpload" accept=".pdf">
+                    <div class="file-name" id="fileName"></div>
+                </div>
+
+                <button class="process-btn" id="processBtn" disabled>
+                    Process Document
+                </button>
+
+                <div class="processing-status" id="processingStatus">
+                    <div id="statusText">Processing document...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div id="statusDetails"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">AI Water Conservation Assistant</h2>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Ask about water conservation (e.g., 'How to save water in college hostels?')"
+                        autocomplete="off"
+                    >
+                    <button class="ask-btn" id="askBtn">Ask AI</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <h2 class="section-title">Water Impact Calculator</h2>
+            
+            <div class="calculator-grid">
+                <div class="input-group">
+                    <label for="bucketsSaved">💧 Buckets of Water Saved</label>
+                    <input type="number" id="bucketsSaved" min="0" value="0" placeholder="e.g., 5">
+                </div>
+                
+                <div class="input-group">
+                    <label for="leaksFixed">🔧 Number of Leaks Fixed</label>
+                    <input type="number" id="leaksFixed" min="0" value="0" placeholder="e.g., 2">
+                </div>
+                
+                <div class="input-group">
+                    <label for="showerDuration">🚿 Shower Duration (minutes)</label>
+                    <input type="number" id="showerDuration" min="0" value="0" placeholder="e.g., 5">
+                </div>
+            </div>
+
+            <button class="calculate-btn" id="calculateBtn">Calculate Impact</button>
+
+            <div class="impact-result" id="impactResult">
+                <div class="success-message" id="successMessage">
+                    🎉 Great job! You saved <span class="liters" id="totalLiters">0</span> Liters of water today!
+                </div>
+            </div>
+        </div>
+
+
+        <footer>
+            <p><strong>Smart Water Usage Advisor</strong> - Aligned with UN Sustainable Development Goal 6</p>
+            <p>© 2026 | Promoting responsible water usage and conservation</p>
+        </footer>
+    </div>
+
+    <script>
+        // Knowledge base for water conservation
+        const waterKnowledge = {
+            'hostel': {
+                keywords: ['hostel', 'college', 'dormitory', 'student', 'campus'],
+                response: `**Water Conservation in College Hostels:**
+
+1. **Install Low-Flow Fixtures**: Replace showerheads and faucets with low-flow alternatives (saves 25-60% water)
+2. **Fix Leaks Promptly**: A dripping tap can waste 15 liters per day
+3. **Shorter Showers**: Limit showers to 5 minutes (saves ~50 liters per shower)
+4. **Bucket Bathing**: Use buckets instead of running showers when possible
+5. **Reuse Water**: Collect water while waiting for hot water, use for plants
+6. **Awareness Campaigns**: Post water-saving tips in bathrooms and common areas
+7. **Rainwater Harvesting**: Install systems to collect rainwater for non-potable uses
+8. **Dual-Flush Toilets**: Use dual-flush systems (saves 67% water per flush)
+
+**Impact**: These measures can reduce hostel water consumption by 30-40%!`
+            },
+            'home': {
+                keywords: ['home', 'house', 'household', 'family', 'residential'],
+                response: `**Water Conservation at Home:**
+
+1. **Kitchen Efficiency**:
+   - Run dishwashers only when full
+   - Use a basin for washing vegetables instead of running water
+   - Keep drinking water in the fridge instead of running tap until cold
+
+2. **Bathroom Savings**:
+   - Install aerators on taps (reduces flow by 50%)
+   - Take shorter showers (5 minutes max)
+   - Turn off tap while brushing teeth (saves 6 liters/minute)
+
+3. **Laundry Tips**:
+   - Wash full loads only
+   - Use water-efficient washing machines
+   - Reuse rinse water for mopping floors
+
+4. **Outdoor Conservation**:
+   - Water plants early morning or evening
+   - Use drip irrigation systems
+   - Collect rainwater for gardening
+
+5. **Leak Detection**: Check for leaks monthly - a small leak can waste 30+ liters daily
+
+**Average Savings**: 20,000-30,000 liters per household annually!`
+            },
+            'agriculture': {
+                keywords: ['farm', 'agriculture', 'crop', 'irrigation', 'farming'],
+                response: `**Water Conservation in Agriculture:**
+
+1. **Drip Irrigation**: Most efficient method (90-95% efficiency vs 60% for sprinklers)
+2. **Mulching**: Reduces evaporation by 50-70%
+3. **Crop Selection**: Choose drought-resistant varieties
+4. **Soil Management**: Improve soil structure to retain moisture
+5. **Rainwater Harvesting**: Collect and store rainwater in farm ponds
+6. **Precision Agriculture**: Use sensors to monitor soil moisture
+7. **Timing**: Irrigate during cooler hours (early morning/evening)
+8. **Micro-sprinklers**: Better than flood irrigation (saves 30-40% water)
+
+**Government Support**: Check for subsidies on drip irrigation systems and rainwater harvesting structures.
+
+**Impact**: Can reduce agricultural water use by 40-60% while maintaining yields!`
+            },
+            'industry': {
+                keywords: ['industry', 'industrial', 'factory', 'manufacturing', 'business'],
+                response: `**Industrial Water Conservation:**
+
+1. **Water Audit**: Conduct regular audits to identify wastage points
+2. **Recycling Systems**: Install water recycling and treatment plants
+3. **Cooling Tower Optimization**: Use efficient cooling systems
+4. **Process Optimization**: Minimize water use in production processes
+5. **Leak Detection**: Implement automated leak detection systems
+6. **Employee Training**: Educate staff on water conservation practices
+7. **Rainwater Harvesting**: Collect rainwater for non-process uses
+8. **Zero Liquid Discharge (ZLD)**: Aim for ZLD systems where feasible
+
+**Compliance**: Follow local industrial water usage regulations and obtain necessary permits.
+
+**ROI**: Water conservation can reduce operational costs by 15-30%!`
+            },
+            'general': {
+                keywords: ['save', 'conserve', 'reduce', 'tips', 'help', 'advice', 'general'],
+                response: `**General Water Conservation Tips:**
+
+1. **Daily Habits**:
+   - Turn off taps when not in use
+   - Fix leaks immediately
+   - Use water-efficient appliances
+
+2. **Smart Usage**:
+   - Reuse water where possible (e.g., vegetable washing water for plants)
+   - Collect rainwater for non-drinking purposes
+   - Use a broom instead of hose for cleaning driveways
+
+3. **Technology**:
+   - Install water meters to monitor usage
+   - Use smart irrigation controllers
+   - Consider greywater systems
+
+4. **Community Action**:
+   - Participate in local water conservation programs
+   - Report water wastage in public areas
+   - Educate others about water conservation
+
+5. **Monitor Usage**: Track your water consumption monthly to identify patterns
+
+**Remember**: Every drop counts! Small changes can lead to significant water savings.
+
+**Global Context**: 2.2 billion people lack access to safe water (WHO). Your conservation helps!`
+            },
+            'quality': {
+                keywords: ['quality', 'clean', 'pure', 'safe', 'drinking', 'contamination', 'pollution'],
+                response: `**Water Quality and Safety:**
+
+1. **Testing**: Test your water regularly for:
+   - pH levels (6.5-8.5 ideal)
+   - Bacterial contamination
+   - Heavy metals (lead, arsenic)
+   - Chemical pollutants
+
+2. **Purification Methods**:
+   - Boiling (kills bacteria and viruses)
+   - UV filtration
+   - RO (Reverse Osmosis) systems
+   - Activated carbon filters
+
+3. **Storage Safety**:
+   - Use clean, covered containers
+   - Clean storage tanks every 6 months
+   - Avoid plastic containers in sunlight
+
+4. **Pollution Prevention**:
+   - Proper disposal of chemicals
+   - Don't dump waste in water bodies
+   - Use eco-friendly cleaning products
+
+5. **Government Standards**: Refer to your local municipal water quality standards
+
+**Warning Signs**: Unusual color, odor, or taste - get water tested immediately!
+
+**SDG 6 Target**: Ensure availability and sustainable management of water and sanitation for all.`
+            },
+            'rainwater': {
+                keywords: ['rainwater', 'harvest', 'collection', 'rain'],
+                response: `**Rainwater Harvesting:**
+
+1. **System Components**:
+   - Catchment area (roof)
+   - Gutters and downpipes
+   - First flush diverter
+   - Storage tank
+   - Filtration system
+
+2. **Benefits**:
+   - Reduces water bills by 30-50%
+   - Decreases groundwater depletion
+   - Reduces urban flooding
+   - Provides backup during shortages
+
+3. **Calculation**: 
+   Roof area (m²) × Rainfall (mm) × 0.8 (efficiency) = Liters collected
+   Example: 100m² roof × 100mm rain = 8,000 liters!
+
+4. **Uses**:
+   - Gardening and landscaping
+   - Toilet flushing
+   - Washing vehicles
+   - After treatment: drinking water
+
+5. **Maintenance**:
+   - Clean gutters regularly
+   - Check filters monthly
+   - Inspect tank annually
+
+**Government Incentives**: Many regions offer subsidies for rainwater harvesting installations!`
+            }
+        };
+
+        // DOM Elements
+        const pdfUpload = document.getElementById('pdfUpload');
+        const fileName = document.getElementById('fileName');
+        const processBtn = document.getElementById('processBtn');
+        const processingStatus = document.getElementById('processingStatus');
+        const progressFill = document.getElementById('progressFill');
+        const statusText = document.getElementById('statusText');
+        const statusDetails = document.getElementById('statusDetails');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const askBtn = document.getElementById('askBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        
+        // Calculator DOM Elements
+        const bucketsSavedInput = document.getElementById('bucketsSaved');
+        const leaksFixedInput = document.getElementById('leaksFixed');
+        const showerDurationInput = document.getElementById('showerDuration');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const impactResult = document.getElementById('impactResult');
+        const totalLitersSpan = document.getElementById('totalLiters');
+
+        let documentProcessed = false;
+
+        // Water Impact Calculator
+        calculateBtn.addEventListener('click', function() {
+            const buckets = parseInt(bucketsSavedInput.value) || 0;
+            const leaks = parseInt(leaksFixedInput.value) || 0;
+            const showerMin = parseInt(showerDurationInput.value) || 0;
+            
+            // Calculations (per day):
+            // - Each bucket saved = 15 liters
+            // - Each leak fixed = 20 liters
+            // - Shower duration: assuming average is 10 min, savings = (10 - X) × 10 liters
+            
+            const bucketsLiters = buckets * 15;
+            const leaksLiters = leaks * 20;
+            
+            // Shower savings: if user showers for less than 10 min, they save water
+            let showersLiters = 0;
+            if (showerMin > 0 && showerMin < 10) {
+                showersLiters = (10 - showerMin) * 10;
+            }
+            
+            const totalLiters = bucketsLiters + leaksLiters + showersLiters;
+            
+            // Update display
+            totalLitersSpan.textContent = totalLiters;
+            
+            // Show result with animation
+            impactResult.classList.add('active');
+            
+            // Scroll to result
+            impactResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+
+        // Initialize chat with AI greeting
+        function initializeChat() {
+            addMessage('ai', 'Hi, I am an AI Water Advisor. Please refer to your local municipal guidelines for official water policies.');
+            addMessage('ai', 'I can help you with water conservation tips for homes, hostels, agriculture, industry, and more. What would you like to know?');
+        }
+
+        // File upload handler
+        pdfUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.style.display = 'block';
+                fileName.textContent = `📄 Selected: ${file.name}`;
+                processBtn.disabled = false;
+            }
+        });
+
+        // Process document simulation
+        processBtn.addEventListener('click', function() {
+            processBtn.disabled = true;
+            processingStatus.classList.add('active');
+            progressFill.style.width = '0%';
+            
+            const steps = [
+                { progress: 20, text: 'Extracting text from PDF...', detail: 'Reading document structure' },
+                { progress: 40, text: 'Analyzing content...', detail: 'Identifying key water conservation guidelines' },
+                { progress: 60, text: 'Creating embeddings...', detail: 'Processing 127 text chunks' },
+                { progress: 80, text: 'Indexing in vector database...', detail: 'Building semantic search index' },
+                { progress: 100, text: 'Processing complete!', detail: 'Document ready for queries' }
+            ];
+
+            let currentStep = 0;
+
+            const processInterval = setInterval(() => {
+                if (currentStep < steps.length) {
+                    const step = steps[currentStep];
+                    progressFill.style.width = step.progress + '%';
+                    statusText.textContent = step.text;
+                    statusDetails.textContent = step.detail;
+                    currentStep++;
+                } else {
+                    clearInterval(processInterval);
+                    setTimeout(() => {
+                        processingStatus.classList.remove('active');
+                        documentProcessed = true;
+                        addMessage('ai', '✅ Document processed successfully! The water guidelines have been indexed and are ready for queries. You can now ask specific questions about the guidelines.');
+                    }, 1000);
+                }
+            }, 800);
+        });
+
+        // Add message to chat
+        function addMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = type === 'ai' ? '🤖 AI Advisor' : '👤 You';
+            
+            const content = document.createElement('div');
+            content.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            messageDiv.appendChild(label);
+            messageDiv.appendChild(content);
+            chatMessages.appendChild(messageDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Find best matching response
+        function findBestResponse(question) {
+            const lowerQuestion = question.toLowerCase();
+            
+            // Check each category
+            for (const [category, data] of Object.entries(waterKnowledge)) {
+                for (const keyword of data.keywords) {
+                    if (lowerQuestion.includes(keyword)) {
+                        return data.response;
+                    }
+                }
+            }
+            
+            // Default response
+            return waterKnowledge.general.response;
+        }
+
+        // Handle chat submission
+        function handleChatSubmit() {
+            const question = chatInput.value.trim();
+            
+            if (!question) return;
+            
+            // Add user message
+            addMessage('user', question);
+            chatInput.value = '';
+            
+            // Show typing indicator
+            typingIndicator.classList.add('active');
+            
+            // Simulate AI thinking time
+            setTimeout(() => {
+                typingIndicator.classList.remove('active');
+                
+                // Get response
+                const response = findBestResponse(question);
+                addMessage('ai', response);
+                
+                // Add follow-up suggestion
+                setTimeout(() => {
+                    addMessage('ai', 'Do you have any other questions about water conservation? I can provide information on homes, hostels, agriculture, industry, water quality, and rainwater harvesting.');
+                }, 500);
+            }, 1500);
+        }
+
+        // Event listeners for chat
+        askBtn.addEventListener('click', handleChatSubmit);
+        
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleChatSubmit();
+            }
+        });
+
+        // Initialize the application
+        initializeChat();
+    </script>
+</body>
+</html>
